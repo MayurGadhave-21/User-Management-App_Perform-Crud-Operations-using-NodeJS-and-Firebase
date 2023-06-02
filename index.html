@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>User Management App</title>
+  <style>
+    /* CSS styles */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    h1 {
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+      border-radius: 5px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 3px;
+      border: 1px solid #ccc;
+    }
+
+    .form-group button {
+      padding: 10px 20px;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    .form-group button:hover {
+      background-color: #45a049;
+    }
+
+    .user-list {
+      margin-top: 20px;
+    }
+
+    .user-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      background-color: #fff;
+      border-radius: 3px;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+    }
+
+    .user-item .user-details {
+      flex: 1;
+      margin-right: 10px;
+    }
+
+    .user-item .user-details span {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .user-item .user-actions {
+      display: flex;
+      align-items: center;
+    }
+
+    .user-item .user-actions button {
+      margin-left: 10px;
+      padding: 5px 10px;
+      background-color: #f44336;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    .user-item .user-actions button:hover {
+      background-color: #d32f2f;
+    }
+  </style>
+</head>
+<body>
+  <h1>User Management App</h1>
+  <div class="container">
+    <div class="form-group">
+      <label for="name">Name:</label>
+      <input type="text" id="name" placeholder="Enter name">
+    </div>
+    <div class="form-group">
+      <label for="email">Email:</label>
+      <input type="email" id="email" placeholder="Enter email">
+    </div>
+    <div class="form-group">
+      <label for="age">Age:</label>
+      <input type="number" id="age" placeholder="Enter age">
+    </div>
+    <div class="form-group">
+      <button id="create-user">Create User</button>
+    </div>
+    <div class="form-group">
+      <label for="id">ID:</label>
+      <input type="text" id="id" placeholder="Enter ID">
+    </div>
+    <div class="form-group">
+      <button id="update-user">Update User</button>
+    </div>
+    <h2>User List</h2>
+    <div class="user-list" id="user-list"></div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const userList = document.getElementById("user-list");
+
+      // Function to fetch users from the server
+      const fetchUsers = async () => {
+        try {
+          const response = await fetch("http://localhost:4000/users");
+          const users = await response.json();
+
+          // Clear previous user list
+          userList.innerHTML = "";
+
+          // Render each user in the list
+          users.forEach(user => {
+            const userItem = document.createElement("div");
+            userItem.classList.add("user-item");
+
+            const userDetails = document.createElement("div");
+            userDetails.classList.add("user-details");
+
+            const name = document.createElement("span");
+            name.textContent = `Name: ${user.name}`;
+            userDetails.appendChild(name);
+
+            const email = document.createElement("span");
+            email.textContent = `Email: ${user.email}`;
+            userDetails.appendChild(email);
+
+            const age = document.createElement("span");
+            age.textContent = `Age: ${user.age}`;
+            userDetails.appendChild(age);
+
+            const id = document.createElement("span");
+            id.textContent = `ID: ${user.id}`;
+            userDetails.appendChild(id);
+
+            const userActions = document.createElement("div");
+            userActions.classList.add("user-actions");
+
+            const deleteUserButton = document.createElement("button");
+            deleteUserButton.textContent = "Delete";
+            deleteUserButton.addEventListener("click", () => {
+              deleteUser(user.id);
+            });
+            userActions.appendChild(deleteUserButton);
+
+            userItem.appendChild(userDetails);
+            userItem.appendChild(userActions);
+
+            userList.appendChild(userItem);
+          });
+        } catch (error) {
+          console.log("Failed to fetch users:", error);
+        }
+      };
+
+      // Function to create a new user
+      const createUser = async () => {
+        const nameInput = document.getElementById("name");
+        const emailInput = document.getElementById("email");
+        const ageInput = document.getElementById("age");
+
+        const name = nameInput.value.trim();
+        const email = emailInput.value.trim();
+        const age = Number(ageInput.value);
+
+        if (name === "" || email === "" || isNaN(age)) {
+          return;
+        }
+
+        const userData = {
+          name,
+          email,
+          age,
+        };
+
+        try {
+          const response = await fetch("http://localhost:4000/users", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(userData),
+          });
+
+          if (response.ok) {
+            nameInput.value = "";
+            emailInput.value = "";
+            ageInput.value = "";
+
+            fetchUsers();
+          } else {
+            console.log("Failed to create user");
+          }
+        } catch (error) {
+          console.log("Failed to create user:", error);
+        }
+      };
+
+      // Function to update a user
+      const updateUser = async () => {
+        const idInput = document.getElementById("id");
+        const nameInput = document.getElementById("name");
+        const emailInput = document.getElementById("email");
+        const ageInput = document.getElementById("age");
+
+        const id = idInput.value.trim();
+        const name = nameInput.value.trim();
+        const email = emailInput.value.trim();
+        const age = Number(ageInput.value);
+
+        if (id === "" || name === "" || email === "" || isNaN(age)) {
+          return;
+        }
+
+        const userData = {
+          name,
+          email,
+          age,
+        };
+
+        try {
+          const response = await fetch(`http://localhost:4000/update`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ id, ...userData }),
+          });
+
+          if (response.ok) {
+            idInput.value = "";
+            nameInput.value = "";
+            emailInput.value = "";
+            ageInput.value = "";
+
+            fetchUsers();
+          } else {
+            console.log("Failed to update user");
+          }
+        } catch (error) {
+          console.log("Failed to update user:", error);
+        }
+      };
+
+      // Function to delete a user
+      const deleteUser = async (userId) => {
+        try {
+          const response = await fetch(`http://localhost:4000/users/${userId}`, {
+            method: "DELETE",
+          });
+
+          if (response.ok) {
+            fetchUsers();
+          } else {
+            console.log("Failed to delete user");
+          }
+        } catch (error) {
+          console.log("Failed to delete user:", error);
+        }
+      };
+
+      // Attach event listener to create user button
+      const createUserButton = document.getElementById("create-user");
+      createUserButton.addEventListener("click", createUser);
+
+      // Attach event listener to update user button
+      const updateUserButton = document.getElementById("update-user");
+      updateUserButton.addEventListener("click", updateUser);
+
+      // Fetch initial users
+      fetchUsers();
+    });
+  </script>
+</body>
+</html>
